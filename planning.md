@@ -106,7 +106,13 @@ For my specific use case, I will use section embeddings, since pages are structu
      You can use ASCII art, a Mermaid diagram, or embed a sketch as an image.
      You'll use this diagram as context when prompting AI tools to implement each stage. -->
 
----
+```mermaid
+flowchart LR
+     A[Document Ingestion\nrequests / BeautifulSoup] --> B[Chunking\nsection-based splitter]
+     B --> C[Embedding + Vector Store\nall-MiniLM-L6-v2 + ChromaDB]
+     C --> D[Retrieval\ntop-k semantic search]
+     D --> E[Generation\nGroq LLM]
+```
 
 ## AI Tool Plan
 
