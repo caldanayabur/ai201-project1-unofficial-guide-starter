@@ -61,7 +61,11 @@ For my specific documents, the chunking strategy should be a hybrid of paragraph
 
 **Embedding model:** all-MiniLM-L6-v2 via sentence-transformers
 
-**Top-k:** 4
+**Top-k:** 5 (started at 4; raised after testing — see note below)
+
+**Tuning note (after implementation):** Two adjustments came out of testing retrieval against the evaluation queries:
+1. *Property-tagged embeddings.* Many chunks are bare amenity lists with no property name in them, so property-specific queries matched generic intro chunks of the *wrong* complex. I now prepend the property name to each chunk's text before embedding (the clean text is still stored for display), which keeps retrieval specific to the correct apartment — exactly the intent noted in the Chunking Strategy.
+2. *Top-k 4 → 5.* For "Which amenities does The Standard at Tampa highlight?", the chunk actually listing the pool and multi-sport simulator ranked #5, just outside k=4. Raising k to 5 brings the answer chunk into context without diluting the well-separated queries.
 
 **Production tradeoff reflection:** I am using a smaller embedding model because the documents are short official property pages with amenity lists and feature descriptions. A lightweight model should be fast and accurate enough for this domain, and retrieving four chunks gives the model enough context without pulling in too much unrelated information. If cost and latency were not concerns, I would consider a larger embedding model with better semantic accuracy, but I do not think that is necessary for this project.
 
