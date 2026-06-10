@@ -30,7 +30,7 @@ The domain I chose is off-campus student housing amenities around the USF Tampa 
 | 7 | Venue at North Campus | Official property portal highlighting the cyber cafe, pet park, sand volleyball courts, and gated access. | https://venueatnorthcampus.prospectportal.com/tampa/venue-at-north-campus/amenities/ |
 | 8 | Station 42 | Official community page detailing the renovated clubhouse, outdoor grills, and 24/7 student study rooms. | https://station42.us/amenities/ |
 | 9 | 42N Apartments | Official amenities guide covering the hammock garden, fire pits, and outdoor half-basketball court. | https://www.live42n.com/amenities/ |
-| 10 | The Ivy | Official USF portal description outlining the boutique clubhouse, movie theater room, and tennis courts. | https://offcampushousing.usf.edu/housing/property/the-ivy/54e4zvq |
+| 10 | The Ivy | Official amenities page detailing the boutique clubhouse, movie theater room, and tennis courts. | https://www.livetheivy.com/apartments/fl/tampa/amenities |
 
 ---
 
@@ -126,7 +126,7 @@ flowchart LR
      "I'll give Claude my Chunking Strategy section and ask it to implement chunk_text()
      with my specified chunk size and overlap" is a plan. -->
 
-**Milestone 3 — Ingestion and chunking:** I will use Claude Sonnet for this milestone because it is strong at reasoning about document structure and turning page text into clean chunks. I will give it my Domain, Documents, Chunking Strategy, and the project requirements so it can help write the ingestion code and chunking logic. I expect it to produce document loading, section-based chunking, and metadata handling, and I will verify it by checking that chunks stay close to the target size and preserve property names and source URLs.
+**Milestone 3 — Ingestion and chunking:** I will use Claude Sonnet for this milestone because it is strong at reasoning about document structure and turning page text into clean chunks. I will give it my Domain, Documents, Chunking Strategy, and the project requirements so it can help write the ingestion code and chunking logic. I expect it to write a script that loads the raw content of my documents and then cleans it up properly.
 
 **Milestone 4 — Embedding and retrieval:** I will use GPT for this milestone because it is good at precise coding and retrieval logic. I will give it my Retrieval Approach section, Chunking Strategy, and project requirements so it can help wire up sentence-transformers, the vector store, and top-k search. I expect it to produce the embedding and retrieval pipeline, and I will verify it by testing that relevant amenities are returned for a few sample queries.
 
