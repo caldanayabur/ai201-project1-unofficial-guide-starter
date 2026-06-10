@@ -17,7 +17,7 @@ SOURCES = [
     {
         "id": "01_the_standard_at_tampa",
         "property_name": "The Standard at Tampa",
-        "url": "https://thestandardtampa.landmark-properties.com/",
+        "url": "https://thestandardtampa.landmark-properties.com/amenities/",
     },
     {
         "id": "02_halo_46",
@@ -129,15 +129,38 @@ def save_document(doc: dict, doc_id: str) -> Path:
     return out_path
 
 
+def _has_usable_existing(doc_id: str) -> bool:
+    """True if documents/<id>.json already holds error-free, non-empty text."""
+    path = DOCUMENTS_DIR / f"{doc_id}.json"
+    if not path.exists():
+        return False
+    try:
+        existing = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False
+    return not existing.get("fetch_error") and bool(existing.get("raw_text"))
+
+
 def main():
     DOCUMENTS_DIR.mkdir(exist_ok=True)
 
     print(f"Ingesting {len(SOURCES)} sources into {DOCUMENTS_DIR}/\n")
-    success, failed = 0, 0
+    success, failed, preserved = 0, 0, 0
 
     for source in SOURCES:
         print(f"Fetching: {source['property_name']}")
         doc = fetch_document(source)
+
+        # If the fetch failed but a usable document already exists on disk,
+        # keep it rather than clobbering it with an empty error record. Some
+        # sources (e.g. Venue at North Campus) block the scraper with a 403 and
+        # their text was filled in manually — a failed re-run must not wipe that.
+        if doc["fetch_error"] and _has_usable_existing(source["id"]):
+            print(f"  [KEEP]  fetch failed; preserving existing {source['id']}.json")
+            preserved += 1
+            time.sleep(1)
+            continue
+
         path = save_document(doc, source["id"])
 
         if doc["fetch_error"]:
@@ -148,7 +171,7 @@ def main():
         print(f"  Saved -> {path.name}")
         time.sleep(1)  # be polite between requests
 
-    print(f"\nDone. {success} succeeded, {failed} failed.")
+    print(f"\nDone. {success} succeeded, {failed} failed, {preserved} preserved.")
     if failed:
         print("Re-run or manually add raw text for any failed sources before chunking.")
 

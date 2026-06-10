@@ -155,9 +155,44 @@ def get_collection() -> "chromadb.api.models.Collection.Collection":
         return build_index()
 
 
+_property_names: list[str] | None = None
+
+
+def get_property_names() -> list[str]:
+    """Distinct property names in the collection (cached), longest first.
+
+    Longest-first so that when one name is a substring of another we match the
+    most specific one. Read straight from the stored metadata so it always
+    reflects whatever is actually indexed.
+    """
+    global _property_names
+    if _property_names is None:
+        metas = get_collection().get(include=["metadatas"])["metadatas"]
+        names = {m["property_name"] for m in metas}
+        _property_names = sorted(names, key=len, reverse=True)
+    return _property_names
+
+
+def detect_property(query: str) -> str | None:
+    """Return the single known property named in the query, else None.
+
+    If the query mentions zero properties (a general question) or more than one
+    (a comparison), we don't scope — the caller falls back to plain top-k.
+    """
+    q = query.lower()
+    matches = [name for name in get_property_names() if name.lower() in q]
+    return matches[0] if len(matches) == 1 else None
+
+
 def retrieve(query: str, k: int = TOP_K) -> list[dict]:
     """
-    Retrieve the top-k most relevant chunks for a query.
+    Retrieve the most relevant chunks for a query.
+
+    If the query names exactly one known property, retrieval is scoped to that
+    property's chunks (ChromaDB metadata filter) and returns all of them, so a
+    "what does X offer?" question gets X's complete amenity list even when it
+    spans several chunks — and the source list never bleeds into other
+    properties. Otherwise we fall back to a plain top-k semantic search.
 
     Returns a list (best match first) of dicts:
         {
@@ -173,10 +208,22 @@ def retrieve(query: str, k: int = TOP_K) -> list[dict]:
     collection = get_collection()
 
     query_embedding = model.encode([query]).tolist()
-    results = collection.query(
-        query_embeddings=query_embedding,
-        n_results=k,
-    )
+
+    prop = detect_property(query)
+    if prop is not None:
+        # Scope to the named property and pull all of its chunks (each property
+        # has only a handful), ranked by similarity within that property.
+        n_in_property = len(collection.get(where={"property_name": prop})["ids"])
+        results = collection.query(
+            query_embeddings=query_embedding,
+            n_results=max(k, n_in_property),
+            where={"property_name": prop},
+        )
+    else:
+        results = collection.query(
+            query_embeddings=query_embedding,
+            n_results=k,
+        )
 
     # Chroma returns parallel lists wrapped in an outer list (one per query).
     docs = results["documents"][0]
